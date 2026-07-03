@@ -12,7 +12,7 @@ input: "Add payment-gated API routes to this SE-2 app."
 workspace:                     # exactly one of repo+commit or template
   repo: scaffold-eth/scaffold-eth-2
   commit: abc123
-  # template: templates/math   # alternative: local dir copied as the workspace
+  # template: templates/blog-draft   # alternative: local dir copied as the workspace
 variants:
   - no_skill
   - current_skill
