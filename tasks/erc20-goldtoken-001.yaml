@@ -8,7 +8,11 @@ workspace:
 variants:
   - repo_context
   - current_skill
+  - forced_skill
+  - skill_plus_agents_md
   - candidate_skill
+variant_overlays:
+  skill_plus_agents_md: overlays/erc20-agents-md/
 skill_source:
   path: skills/erc-20
 verifier:
