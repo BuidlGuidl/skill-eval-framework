@@ -109,8 +109,6 @@ skill_section: "What You Probably Got Wrong"   # the section that should prevent
 status: open                   # open | fixed | wontfix
 ```
 
-Records from before v0.1 (`erc20-goldtoken-001`) use the old schema — valid history, never rewrite them. Their task spec and deterministic verifier were removed along with the verifier concept; the full files live in git history.
-
 ## Reports
 
 Every report ends with the same table:
