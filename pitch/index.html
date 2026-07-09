@@ -93,6 +93,10 @@
   .term .bar span { margin-left: 10px; color: var(--muted); font-size: 12px; letter-spacing: 0.1em; }
   .term .body { padding: 20px 18px; line-height: 1.7; }
   .term .u { color: var(--fg); } .term .prompt-mark { color: var(--amber); }
+  .term .turn + .turn { margin-top: 16px; }
+  .term .reply-mark { color: var(--teal); }
+  .term .a { color: var(--muted); }
+  .term .a strong { color: var(--fg); font-weight: 500; }
 
   /* code */
   pre.code { background: #0C0D12; border: 1px solid var(--line); border-left: 3px solid var(--amber); border-radius: 8px; padding: 15px 18px; overflow-x: auto; font-family: "IBM Plex Mono", monospace; font-size: 13.5px; line-height: 1.6; color: #C9CBD6; margin: 0; }
@@ -112,6 +116,7 @@
   /* workspace before/after (two boxes) */
   .ws { display: grid; gap: 16px; margin-top: 8px; }
   @media (min-width: 760px) { .ws { grid-template-columns: 1fr 1fr; } }
+  .ws.one { grid-template-columns: 1fr; }
 
   /* fundamentals */
   .fund { display: grid; gap: 16px; margin-top: 8px; }
@@ -180,26 +185,54 @@
 </head>
 <body>
 
-<!-- INTRO · THE PROMPT -->
+<!-- INTRO · WHAT THE THING IS -->
 <section class="intro">
   <div class="kicker">skill-eval-framework · a walk-through</div>
   <a class="repolink" href="https://github.com/technophile-04/skill-eval-framework">github.com/technophile-04/skill-eval-framework</a>
-  <h1>You want to know if a skill is worth it. You ask.</h1>
-  <p class="sub">That's the whole interface. You point your agent at a skill and tell it to check, and it runs the entire benchmark itself. No config, no harness to wire up. Here's a real one, checking the <b>gas</b> skill:</p>
+  <h1>A building block for checking whether a skill helps.</h1>
+  <p class="sub">We keep calling it a framework, and that word oversells it. There's no runner in here, nothing to configure, no harness to wire up. It's a small repo with an <b>AGENTS.md</b> that spells out the rules, two scripts that guard the steps where sloppiness would quietly corrupt the numbers, and empty folders waiting for what comes out. Your agent reads it and runs the benchmark itself.</p>
   <div class="spacer"></div>
-  <div class="term reveal">
-    <div class="bar"><i></i><i></i><i></i><span>you → your agent</span></div>
-    <div class="body">
-      <div><span class="prompt-mark">›</span> <span class="u">Let's eval the <strong>gas</strong> skill. Run it on codex, with the skill and without.</span></div>
+  <div class="ws one">
+    <div class="filecard reveal">
+      <div class="fname">the whole block</div>
+      <pre>skill-eval-framework/
+├─ <span class="k">AGENTS.md</span>                     <span class="cm">the rules, read first</span>
+├─ skills/<span class="k">gas/</span>                   <span class="cm">a skill under test</span>
+├─ tasks/                        <span class="cm">drafted by the agent</span>
+├─ scripts/setup-workspace.ts    <span class="cm">seeds the clean room</span>
+├─ scripts/verify.ts             <span class="cm">gathers the evidence</span>
+├─ lib/judge.ts                  <span class="cm">grades it, blind</span>
+└─ artifacts/ reports/ mistakes/
+
+<span class="cm"># there is no runner. the orchestrator is</span>
+<span class="cm"># whatever agent you happen to open here</span></pre>
     </div>
   </div>
   <div class="spacer"></div>
-  <p class="sub" style="margin-top:0">You tell it which executor to use, codex or claude today, with opencode on the way. Everything after this line, the agent does on its own.</p>
+  <p class="sub" style="margin-top:0">Four things are fixed: what the task is, that a <b>fresh executor</b> performs it, that a <b>blind judge</b> grades it, and that the <b>result</b> gets written down. Everything else the agent decides.</p>
 </section>
 
-<!-- 1 · THE GAS TASK + EXPECTATIONS -->
+<!-- 1 · HOW YOU START IT -->
 <section>
-  <div class="eyebrow" data-n="01">The task it drafted</div>
+  <div class="eyebrow" data-n="01">How you start it</div>
+  <h2 class="big reveal">You open your agent in that directory, and ask.</h2>
+  <p class="body muted reveal">That's the whole interface. Point it at a skill, and it works out the rest from <span class="mono">AGENTS.md</span>. Here's a real one, checking the <strong class="mono">gas</strong> skill:</p>
+  <div class="spacer"></div>
+  <div class="term reveal">
+    <div class="bar"><i></i><i></i><i></i><span>claude · the orchestrator</span></div>
+    <div class="body">
+      <div class="turn"><span class="prompt-mark">›</span> <span class="u">I want to eval the skill at <strong>skills/gas</strong></span></div>
+      <div class="turn"><span class="reply-mark">‹</span> <span class="a">Read <strong>AGENTS.md</strong>. I'll draft a task from the skill, then run it <strong>with the skill and without</strong>, so there's something to compare. Which executor should perform the runs, and how many runs per variant?</span></div>
+      <div class="turn"><span class="prompt-mark">›</span> <span class="u">codex, 3 each</span></div>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <p class="body muted reveal">We never said "with and without". That comparison is what the repo is for, so it picks it up on its own. It asks about the things it genuinely can't infer: the executor, and how many runs. Today that's codex or claude, with opencode on the way. Everything after this exchange, the agent does by itself.</p>
+</section>
+
+<!-- 2 · THE GAS TASK + EXPECTATIONS -->
+<section>
+  <div class="eyebrow" data-n="02">The task it drafted</div>
   <h2 class="big reveal">From your ask, it writes the task and the checks.</h2>
   <p class="body muted reveal">The gas skill exists to fix one stale habit: models quote Ethereum gas at 10 to 30 gwei from memory, when these days it's under 1 gwei. So the agent drafts a task that would catch exactly that, along with the checks a blind judge will grade against. You sanity-check it once, then it's out of your hands.</p>
   <div class="spacer"></div>
@@ -233,9 +266,9 @@
 
 <!-- 2 · HOW A RUN WORKS -->
 <section>
-  <div class="eyebrow" data-n="02">How a single run works</div>
+  <div class="eyebrow" data-n="03">How a single run works</div>
   <h2 class="big reveal">The agent runs the whole thing itself.</h2>
-  <p class="body muted reveal">There's no separate benchmark tool you configure. Your agent, playing orchestrator, reads one <span class="mono">AGENTS.md</span> to learn the repo, then drives the run: it sets up a clean workspace, spawns a fresh executor to do the task, and grades the output with a blind judge. Two small scripts guard the steps where sloppiness would quietly corrupt the numbers.</p>
+  <p class="body muted reveal">Your agent, playing orchestrator, drives the run end to end: it sets up a clean workspace, spawns a fresh executor to do the task, and grades what comes back with a blind judge. The two scripts do the parts where sloppiness would quietly corrupt the numbers, seeding the workspace and collecting the evidence.</p>
   <div class="spacer"></div>
   <div class="diagram reveal">
     <div class="cap">one task, one arm, start to finish</div>
@@ -282,7 +315,7 @@ flowchart LR
 
 <!-- 3 · WITH SKILL VS WITHOUT -->
 <section>
-  <div class="eyebrow" data-n="03">Both ways, then compare</div>
+  <div class="eyebrow" data-n="04">Both ways, then compare</div>
   <h2 class="big reveal">Run it with the skill, and without.</h2>
   <p class="body muted reveal">That's one run. To actually test the skill, the framework runs the whole task twice over: three times with the gas skill installed, three times without. Six fresh executors, six clean workspaces, one report at the end.</p>
   <div class="spacer"></div>
@@ -313,7 +346,7 @@ flowchart TB
 
 <!-- 4 · WHAT'S LEFT ON DISK -->
 <section>
-  <div class="eyebrow" data-n="04">What each run writes down</div>
+  <div class="eyebrow" data-n="05">What each run writes down</div>
   <h2 class="big reveal">Every run leaves a paper trail.</h2>
   <p class="body muted reveal">This is the part that makes the framework useful after the fact. The executor and the verify step don't just print a score, they write files. The built output lands in <strong class="mono">output/</strong>, the executor's full session (tokens, turns, everything it tried) in <strong class="mono">transcript.md</strong>, and the graded scorecard in <strong class="mono">result.yaml</strong>. Nothing is thrown away.</p>
   <div class="spacer"></div>
@@ -340,17 +373,17 @@ flowchart TB
 
 <!-- 5 · WHAT THE FILES LOOK LIKE -->
 <section>
-  <div class="eyebrow" data-n="05">What those files look like</div>
+  <div class="eyebrow" data-n="06">What those files look like</div>
   <h2 class="big reveal">A slice of each, from real runs.</h2>
-  <p class="body muted reveal">Not the whole thing, just enough to see the shape. The scorecard is tiny and readable, the diff is the code the executor actually wrote, and the transcript is its full session with the token count at the bottom.</p>
+  <p class="body muted reveal">All three come out of the same run, the first one without the skill. The scorecard is tiny and readable, the diff is whatever the executor actually wrote, and the transcript is its full session with the token count at the bottom.</p>
   <div class="spacer"></div>
   <div class="files">
     <div class="filecard reveal">
       <div class="fname">result.yaml</div>
       <pre>task: gas-cost-estimate-001
 executor: codex
-variant: <span class="k">with_skill</span>
-skill_version: 3daee58
+variant: <span class="k">no_skill</span>
+skill_version: null
 expects:
   expect_1: <span class="s">pass</span>
   expect_2: <span class="s">pass</span>
@@ -360,14 +393,16 @@ pass: <span class="s">true</span></pre>
     </div>
     <div class="filecard diff reveal">
       <div class="fname">run.diff</div>
-      <pre><span class="add">+ const swapRouter02Abi = [</span>
-<span class="add">+   { name: "amountOutMinimum",</span>
-<span class="add">+     type: "uint256" }, ...</span>
-<span class="add">+ ];</span>
-<span class="add">+ name: "approve",</span>
-<span class="add">+ name: "allowance",</span>
-<span class="add">+ name: "decimals",</span>
-<span class="cm">  ...342 more lines</span></pre>
+      <pre><span class="cm">+++ b/output/answer.md</span>
+<span class="add">+ # ERC-20 transfer cost</span>
+<span class="add">+ Typical: about $0.013.</span>
+<span class="add">+ </span>
+<span class="add">+ - ETH/USD: $1,731.65</span>
+<span class="add">+     coinbase spot</span>
+<span class="add">+ - gas: 0.146640597 gwei</span>
+<span class="add">+     eth_gasPrice, publicnode</span>
+<span class="add">+ - units: 50,000 gas</span>
+<span class="cm">  ...51 more lines</span></pre>
     </div>
     <div class="filecard tr reveal">
       <div class="fname">transcript.md</div>
@@ -375,9 +410,9 @@ pass: <span class="s">true</span></pre>
 ETH/USD data first, then
 write the calc to answer.md.
 
-$ curl -s '.../simple/price
-  ?ids=ethereum&amp;vs=usd'
-  → { "usd": 1731.65 }
+$ curl -s 'api.coinbase.com
+  /v2/prices/ETH-USD/spot'
+  → { "amount": "1731.65" }
 ...
 <span class="s">tokens used: 33,544</span></pre>
     </div>
@@ -386,7 +421,7 @@ $ curl -s '.../simple/price
 
 <!-- 6 · THE SECOND QUESTION (swap) -->
 <section>
-  <div class="eyebrow" data-n="06">A second, bigger question</div>
+  <div class="eyebrow" data-n="07">A second, bigger question</div>
   <h2 class="big reveal">Now bend it into a three-way compare.</h2>
   <p class="body muted reveal">The gas run is the framework on home turf: one skill, with and without. But the same base bends. Here we asked it to compare two different skills against a plain agent, and it reshaped the run into three arms. Same prompt in, no task file written by hand:</p>
   <div class="spacer"></div>
@@ -408,7 +443,7 @@ $ curl -s '.../simple/price
 
 <!-- 7 · THE THREE ARMS -->
 <section>
-  <div class="eyebrow" data-n="07">The three versions we compared</div>
+  <div class="eyebrow" data-n="08">The three versions we compared</div>
   <h2 class="big reveal">Same task, different cheat-sheet.</h2>
   <p class="body muted reveal">Three fresh agents, one variable between them: what each was told to read before it started building.</p>
   <div class="spacer"></div>
@@ -440,7 +475,7 @@ flowchart TB
 
 <!-- 8 · THE FUNDAMENTALS -->
 <section>
-  <div class="eyebrow" data-n="08">What the judge checked</div>
+  <div class="eyebrow" data-n="09">What the judge checked</div>
   <h2 class="big reveal">Four things a good swap app gets right.</h2>
   <p class="body muted reveal">The orchestrator wrote these into the task, concrete enough that the blind judge can't be talked into a pass. Every snippet below is real code one of the agents actually wrote.</p>
   <div class="spacer"></div>
@@ -476,7 +511,7 @@ WETH: { address: <span class="s">"0xC02a…6Cc2"</span>, decimals: <span class="
 
 <!-- 9 · WHAT CAME OUT -->
 <section>
-  <div class="eyebrow" data-n="09">What came out</div>
+  <div class="eyebrow" data-n="10">What came out</div>
   <h2 class="big reveal">All three passed every check.</h2>
   <p class="body muted reveal">On codex with gpt-5.5, the fundamentals came out right whether the agent read a skill or not.</p>
   <div class="spacer"></div>
@@ -491,7 +526,7 @@ WETH: { address: <span class="s">"0xC02a…6Cc2"</span>, decimals: <span class="
 
 <!-- 10 · WHAT IT COST -->
 <section>
-  <div class="eyebrow" data-n="10">What it cost</div>
+  <div class="eyebrow" data-n="11">What it cost</div>
   <h2 class="big reveal">Same score, different amount of work.</h2>
   <p class="body muted reveal">Score bars are identical. Token bars aren't, and that difference is the interesting part.</p>
   <div class="spacer"></div>
@@ -525,7 +560,7 @@ WETH: { address: <span class="s">"0xC02a…6Cc2"</span>, decimals: <span class="
 
 <!-- 11 · ASK THE RUNS -->
 <section>
-  <div class="eyebrow" data-n="11">Asking the runs questions</div>
+  <div class="eyebrow" data-n="12">Asking the runs questions</div>
   <h2 class="big reveal">Once it's on disk, you just keep asking.</h2>
   <p class="body muted reveal">Remember the paper trail from earlier. Because the transcripts and result files are all sitting there, the orchestrator can answer follow-ups without re-running anything.</p>
   <div class="spacer"></div>
@@ -556,7 +591,7 @@ WETH: { address: <span class="s">"0xC02a…6Cc2"</span>, decimals: <span class="
 
 <!-- 12 · THE MISTAKE LOOP -->
 <section>
-  <div class="eyebrow" data-n="12">When a skill misses</div>
+  <div class="eyebrow" data-n="13">When a skill misses</div>
   <h2 class="big reveal">Bad runs turn into notes on the skill.</h2>
   <p class="body muted reveal">A tie is the boring case. The framework earns its keep when a skill fails, because it writes down <em>why</em>. When an executor gets something wrong, that goes into a mistake record: what broke, how often, and which part of the skill should have caught it. That record is the thing you act on next.</p>
   <div class="spacer"></div>
@@ -579,7 +614,7 @@ flowchart LR
 
 <!-- 13 · WHY IT'S BUILT THIS WAY (mold + base) -->
 <section>
-  <div class="eyebrow" data-n="13">Why it's built this way</div>
+  <div class="eyebrow" data-n="14">Why it's built this way</div>
   <h2 class="big reveal">We built a mold, and handed it to the agent.</h2>
   <p class="body muted reveal">There are plenty of eval frameworks already. We read through them, then went the other way. Instead of one more feature-heavy harness, we cut it down to the smallest frame that still runs a fair benchmark: how a task runs, how a fresh executor performs it, how a blind judge grades it, what gets written down. Those are the lines. Everything inside them the agent fills in, and when an eval needs a different shape, it just moves a line. It's paint-by-numbers, we drew the outline and the agent paints, free to redraw. In Hindi you'd call the frame a <em>khaka</em>, a mold.</p>
   <div class="mold reveal">
