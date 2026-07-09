@@ -39,7 +39,7 @@ Runs are append-only. A re-run after a patch is a new run id, never an overwrite
 1. **Never perform the task yourself.** Your context is contaminated by definition. Every run is a fresh executor. If you catch yourself editing files inside a workspace, stop, delete the run, start over.
 2. **The executor never sees the grading.** The task yaml and its expect lines stay out of the workspace. `setup` hard-fails on leaks; do not work around it.
 3. **Always use the scripts** for setup and grading. These are the two steps where improvisation quietly corrupts records.
-4. **Grade after execution, independently.** Never let an executor self-report success.
+4. **Grade after execution, independently.** Never let an executor self-report success. Pass your own agent and model to `verify` (`--judge-agent`, `--judge-model`) so the grading runs on the orchestrator's model in a fresh, blind process. Forget them and the run's executor grades itself; that is recorded as `self_judged: true`, not silently allowed to pass as independent.
 5. **Delete workspaces after grading.** `verify` snapshots workspace output into `<run-dir>/output/` first, so nothing is lost.
 
 ## The three roles
