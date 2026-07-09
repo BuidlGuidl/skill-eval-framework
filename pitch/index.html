@@ -55,7 +55,7 @@
   .repolink { display: inline-flex; align-items: center; gap: 9px; font-family: "IBM Plex Mono", monospace; font-size: 14px; color: var(--teal); text-decoration: none; background: var(--ink-2); border: 1px solid var(--line); border-radius: 8px; padding: 9px 14px; margin-bottom: 28px; transition: border-color 160ms ease; }
   .repolink::before { content: "↗"; color: var(--amber); }
   .repolink:hover { border-color: var(--teal); }
-  .intro h1 { font-size: clamp(32px, 5.4vw, 58px); letter-spacing: -0.02em; max-width: 20ch; }
+  .intro h1 { font-size: clamp(32px, 5.4vw, 58px); letter-spacing: -0.02em; max-width: 22ch; }
   .intro .sub { margin-top: 24px; font-size: clamp(17px, 2.1vw, 21px); color: var(--muted); max-width: 64ch; line-height: 1.55; }
   .intro .sub b { color: var(--fg); font-weight: 500; }
   .intro .sub .hi { color: var(--amber); font-weight: 500; }
@@ -134,7 +134,7 @@
   @media (min-width: 720px) { .scores { grid-template-columns: repeat(3, 1fr); } }
   .scores.two { max-width: 560px; }
   @media (min-width: 720px) { .scores.two { grid-template-columns: repeat(2, 1fr); } }
-  .score { text-align: center; background: var(--ink-2); border: 1px solid var(--line); border-radius: 12px; padding: 24px 18px; }
+  .scores .score { text-align: center; background: var(--ink-2); border: 1px solid var(--line); border-radius: 12px; padding: 24px 18px; }
   .score .name { font-family: "IBM Plex Mono", monospace; font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
   .score .val { font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: 44px; color: var(--teal); margin: 8px 0 2px; }
   .score .of { font-size: 13px; color: var(--muted); }
@@ -385,7 +385,6 @@ flowchart TB
       <pre>task: gas-cost-estimate-001
 executor: <span class="k">codex</span>
 variant: <span class="k">no_skill</span>
-skill_version: null
 judge:                <span class="cm">← who graded it</span>
   agent: <span class="k">claude</span>
   model: claude-opus-4-8
