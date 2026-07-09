@@ -281,44 +281,11 @@ runs: <span class="k">3</span></pre>
   </div>
 </section>
 
-<!-- 2 · HOW A RUN WORKS -->
+<!-- 2 · WITH SKILL VS WITHOUT -->
 <section>
-  <div class="eyebrow" data-n="02">How a single run works</div>
-  <h2 class="big reveal">Zoom in on the workspace.</h2>
-  <p class="body muted reveal">That whole diagram turns on one directory. The orchestrator seeds it, the executor works inside it, and verify snapshots it before it gets deleted. Here it is at both moments: the clean room on the way in, and what the run left behind on the way out.</p>
-  <div class="spacer"></div>
-  <div class="ws">
-    <div class="filecard reveal">
-      <div class="fname">the orchestrator sets up a clean room</div>
-      <pre>workspace/
-├─ <span class="k">TASK.md</span>            <span class="cm">the task</span>
-└─ .agents/skills/
-   └─ <span class="k">gas/</span>            <span class="cm">the skill</span>
-
-<span class="cm"># nothing about how it's</span>
-<span class="cm"># graded lives in here</span></pre>
-    </div>
-    <div class="filecard diff reveal">
-      <div class="fname">then the run fills it in</div>
-      <pre>run/
-├─ workspace/
-│  ├─ TASK.md
-│  └─ <span class="add">answer.md</span>       <span class="cm">← executor writes</span>
-├─ <span class="add">result.yaml</span>        <span class="cm">← judge grades</span>
-└─ transcript.md      <span class="cm">← full session</span></pre>
-    </div>
-  </div>
-  <div class="spacer"></div>
-  <p class="body muted reveal">The executor writes <span class="mono">answer.md</span> and stops. Verify reads that same directory afterwards, snapshots what it finds, and hands the evidence to the judge. Both of those steps run through the scripts rather than by hand, because they're where improvisation would quietly corrupt the record.</p>
-  <div class="spacer"></div>
-  <p class="body muted reveal">The judge is a fresh agent too, not the orchestrator thinking about its own work. It runs on whatever model you're driving, codex or claude, and <span class="mono">result.yaml</span> writes down which one graded which run. Two runs graded by different models aren't two data points, so the record has to say.</p>
-</section>
-
-<!-- 3 · WITH SKILL VS WITHOUT -->
-<section>
-  <div class="eyebrow" data-n="03">Both ways, then compare</div>
+  <div class="eyebrow" data-n="02">Both ways, then compare</div>
   <h2 class="big reveal">Run it with the skill, and without.</h2>
-  <p class="body muted reveal">That's one run. To actually test the skill, the framework runs the whole task twice over: three times with the gas skill installed, three times without. Six fresh executors, six clean workspaces, one report at the end.</p>
+  <p class="body muted reveal">That diagram was one run, one arm. To actually test the skill, the framework runs the whole task twice over: three times with the gas skill installed, three times without. Six fresh executors, six clean workspaces, one report at the end.</p>
   <div class="spacer"></div>
   <div class="diagram reveal">
     <div class="cap">one task, two variants, six runs, one report</div>
@@ -345,36 +312,45 @@ flowchart TB
   <p class="body muted reveal">Both sides came back 4/4. On gpt-5.5 the model already checks a live gas price on its own, so the skill's knowledge was correct but not needed here. Knowing a skill is redundant for a given model is a real result, and it's the kind of thing you only find by measuring.</p>
 </section>
 
-<!-- 4 · WHAT'S LEFT ON DISK -->
+<!-- 3 · THE WORKSPACE -->
 <section>
-  <div class="eyebrow" data-n="04">What each run writes down</div>
-  <h2 class="big reveal">Every run leaves a paper trail.</h2>
-  <p class="body muted reveal">This is the part that makes the framework useful after the fact. The executor and the verify step don't just print a score, they write files. The built output lands in <strong class="mono">output/</strong>, the executor's full session (tokens, turns, everything it tried) in <strong class="mono">transcript.md</strong>, and the graded scorecard in <strong class="mono">result.yaml</strong>. Nothing is thrown away.</p>
+  <div class="eyebrow" data-n="03">What a run leaves behind</div>
+  <h2 class="big reveal">Zoom in on one of those runs.</h2>
+  <p class="body muted reveal">Each of the six gets a directory to itself. The orchestrator seeds it, the executor works inside it, and verify snapshots it before the workspace gets deleted. Here it is at both moments: the clean room on the way in, and what the run left behind on the way out.</p>
   <div class="spacer"></div>
-  <div class="diagram reveal">
-    <div class="cap">the artifacts, and why they matter</div>
-    <pre class="mermaid">
-flowchart TB
-  EX["fresh executor"]:::gray --> OUT["output/<br/>what it built"]:::ok
-  EX --> TR["transcript.md<br/>tokens · turns · full session"]:::ok
-  VF["verify + judge"]:::gray --> RES["result.yaml<br/>score per check"]:::acc
-  VF --> DIFF["run.diff<br/>what changed"]:::ok
-  OUT --> Q(["all of it stays on disk,<br/>so you can go back and ask more"]):::acc
-  TR --> Q
-  RES --> Q
-  DIFF --> Q
-  classDef gray fill:#191B24,stroke:#2C2F3C,color:#ECEAE3;
-  classDef acc fill:#241E12,stroke:#E8B24C,color:#E8B24C;
-  classDef ok fill:#12211F,stroke:#4FD1C5,color:#4FD1C5;
-    </pre>
+  <div class="ws">
+    <div class="filecard reveal">
+      <div class="fname">the orchestrator sets up a clean room</div>
+      <pre>workspace/
+├─ <span class="k">TASK.md</span>            <span class="cm">the task</span>
+└─ .agents/skills/
+   └─ <span class="k">gas/</span>            <span class="cm">the skill</span>
+
+<span class="cm"># nothing about how it's</span>
+<span class="cm"># graded lives in here</span></pre>
+    </div>
+    <div class="filecard diff reveal">
+      <div class="fname">then the run fills it in</div>
+      <pre>run/
+├─ output/
+│  └─ <span class="add">answer.md</span>       <span class="cm">← what it built</span>
+├─ <span class="add">run.diff</span>           <span class="cm">← what changed</span>
+├─ <span class="add">result.yaml</span>        <span class="cm">← judge grades</span>
+└─ transcript.md      <span class="cm">← tokens, turns,</span>
+                        <span class="cm">full session</span></pre>
+    </div>
   </div>
   <div class="spacer"></div>
-  <p class="body muted reveal">Keep this in mind, because near the end we just keep asking the orchestrator questions, and this is why we can. The answers were sitting in these files the whole time.</p>
+  <p class="body muted reveal">The executor writes <span class="mono">answer.md</span> and stops. Verify reads that same directory afterwards, snapshots what it finds, and hands the evidence to the judge. Both of those steps run through the scripts rather than by hand, because they're where improvisation would quietly corrupt the record.</p>
+  <div class="spacer"></div>
+  <p class="body muted reveal">Nothing gets thrown away. The workspace itself goes, but what it produced stays: the built output, the diff, the graded scorecard, and the executor's full session with every token it spent. Keep that in mind, because near the end we just keep asking the orchestrator questions, and this is why we can.</p>
+  <div class="spacer"></div>
+  <p class="body muted reveal">The judge is a fresh agent too, not the orchestrator thinking about its own work. It runs on whatever model you're driving, codex or claude, and <span class="mono">result.yaml</span> writes down which one graded which run. Two runs graded by different models aren't two data points, so the record has to say.</p>
 </section>
 
 <!-- 5 · WHAT THE FILES LOOK LIKE -->
 <section>
-  <div class="eyebrow" data-n="05">What those files look like</div>
+  <div class="eyebrow" data-n="04">What those files look like</div>
   <h2 class="big reveal">A slice of each.</h2>
   <p class="body muted reveal">Trimmed to the shape of the file, with values from one real run, the first of the gas runs without the skill. The scorecard is tiny and readable, the diff is whatever the executor actually wrote, and the transcript is its full session with the token count at the bottom.</p>
   <div class="spacer"></div>
@@ -425,7 +401,7 @@ $ curl -s 'api.coinbase.com
 
 <!-- 6 · THE SECOND QUESTION (swap) -->
 <section>
-  <div class="eyebrow" data-n="06">A second, bigger question</div>
+  <div class="eyebrow" data-n="05">A second, bigger question</div>
   <h2 class="big reveal">Now bend it into a three-way compare.</h2>
   <p class="body muted reveal">The gas run is the framework on home turf: one skill, with and without. But the same base bends. Here we asked it to compare two different skills against a plain agent, and it reshaped the run into three arms. Same prompt in, no task file written by hand:</p>
   <div class="spacer"></div>
@@ -447,7 +423,7 @@ $ curl -s 'api.coinbase.com
 
 <!-- 7 · THE THREE ARMS -->
 <section>
-  <div class="eyebrow" data-n="07">The three versions we compared</div>
+  <div class="eyebrow" data-n="06">The three versions we compared</div>
   <h2 class="big reveal">Same task, different cheat-sheet.</h2>
   <p class="body muted reveal">Three fresh agents, one variable between them: what each was told to read before it started building.</p>
   <div class="spacer"></div>
@@ -479,7 +455,7 @@ flowchart TB
 
 <!-- 8 · THE FUNDAMENTALS -->
 <section>
-  <div class="eyebrow" data-n="08">What the judge checked</div>
+  <div class="eyebrow" data-n="07">What the judge checked</div>
   <h2 class="big reveal">Four things a good swap app gets right.</h2>
   <p class="body muted reveal">The orchestrator wrote these into the task, concrete enough that the blind judge can't be talked into a pass. Every snippet below is real code one of the agents actually wrote.</p>
   <div class="spacer"></div>
@@ -515,7 +491,7 @@ WETH: { address: <span class="s">"0xC02a…6Cc2"</span>, decimals: <span class="
 
 <!-- 9 · WHAT CAME OUT -->
 <section>
-  <div class="eyebrow" data-n="09">What came out</div>
+  <div class="eyebrow" data-n="08">What came out</div>
   <h2 class="big reveal">All three passed every check.</h2>
   <p class="body muted reveal">On codex with gpt-5.5, the fundamentals came out right whether the agent read a skill or not.</p>
   <div class="spacer"></div>
@@ -530,7 +506,7 @@ WETH: { address: <span class="s">"0xC02a…6Cc2"</span>, decimals: <span class="
 
 <!-- 10 · WHAT IT COST -->
 <section>
-  <div class="eyebrow" data-n="10">What it cost</div>
+  <div class="eyebrow" data-n="09">What it cost</div>
   <h2 class="big reveal">Same score, different amount of work.</h2>
   <p class="body muted reveal">Score bars are identical. Token bars aren't, and that difference is the interesting part.</p>
   <div class="spacer"></div>
@@ -564,7 +540,7 @@ WETH: { address: <span class="s">"0xC02a…6Cc2"</span>, decimals: <span class="
 
 <!-- 11 · ASK THE RUNS -->
 <section>
-  <div class="eyebrow" data-n="11">Asking the runs questions</div>
+  <div class="eyebrow" data-n="10">Asking the runs questions</div>
   <h2 class="big reveal">Once it's on disk, you just keep asking.</h2>
   <p class="body muted reveal">Remember the paper trail from earlier. Because the transcripts and result files are all sitting there, the orchestrator can answer follow-ups without re-running anything.</p>
   <div class="spacer"></div>
@@ -595,7 +571,7 @@ WETH: { address: <span class="s">"0xC02a…6Cc2"</span>, decimals: <span class="
 
 <!-- 12 · THE MISTAKE LOOP -->
 <section>
-  <div class="eyebrow" data-n="12">When a skill misses</div>
+  <div class="eyebrow" data-n="11">When a skill misses</div>
   <h2 class="big reveal">Bad runs turn into notes on the skill.</h2>
   <p class="body muted reveal">A tie is the boring case. The framework earns its keep when a skill fails, because it writes down <em>why</em>. When an executor gets something wrong, that goes into a mistake record: what broke, how often, and which part of the skill should have caught it. That record is the thing you act on next.</p>
   <div class="spacer"></div>
@@ -618,7 +594,7 @@ flowchart LR
 
 <!-- 13 · WHY IT'S BUILT THIS WAY (mold + base) -->
 <section>
-  <div class="eyebrow" data-n="13">Why it's built this way</div>
+  <div class="eyebrow" data-n="12">Why it's built this way</div>
   <h2 class="big reveal">We built a mold, and handed it to the agent.</h2>
   <p class="body muted reveal">There are plenty of eval frameworks already. We read through them, then went the other way. Instead of one more feature-heavy harness, we cut it down to the smallest frame that still runs a fair benchmark: how a task runs, how a fresh executor performs it, how a blind judge grades it, what gets written down. Those are the lines. Everything inside them the agent fills in, and when an eval needs a different shape, it just moves a line. It's paint-by-numbers, we drew the outline and the agent paints, free to redraw. In Hindi you'd call the frame a <em>khaka</em>, a mold.</p>
   <div class="mold reveal">
