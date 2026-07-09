@@ -133,9 +133,7 @@
   .accepts .hd { color: var(--muted); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
   .accepts table { border-collapse: collapse; white-space: nowrap; }
   .accepts td { padding: 0 14px 0 0; color: #C9CBD6; }
-  .accepts td.who { color: var(--muted); padding-right: 0; }
-  .accepts tr.used td.who { color: var(--coral); }
-  .accepts tr.mod td.who { color: var(--teal); }
+  .accepts td:last-child { padding-right: 0; }
 
   .callout { border: 1px solid var(--line); border-left: 3px solid var(--teal); background: var(--ink-2); border-radius: 8px; padding: 18px 22px; }
   .callout b { color: var(--teal); }
@@ -458,10 +456,10 @@ WETH: { address: <span class="s">"0xC02a…6Cc2"</span>, decimals: <span class="
         <div class="accepts">
           <div class="hd">any of these four counted as a pass</div>
           <table>
-            <tr><td>V2</td><td>0x7a25…488D</td><td class="who"></td></tr>
-            <tr class="used"><td>V3 SwapRouter</td><td>0xE592…1564</td><td class="who">← bare picked this</td></tr>
-            <tr class="mod"><td>SwapRouter02</td><td>0x68b3…Fc45</td><td class="who">← both skill arms</td></tr>
-            <tr><td>Universal Router</td><td>0x66a9…a8af</td><td class="who"></td></tr>
+            <tr><td>V2</td><td>0x7a25…488D</td></tr>
+            <tr><td>V3 SwapRouter</td><td>0xE592…1564</td></tr>
+            <tr><td>SwapRouter02</td><td>0x68b3…Fc45</td></tr>
+            <tr><td>Universal Router</td><td>0x66a9…a8af</td></tr>
           </table>
         </div>
       </div>
