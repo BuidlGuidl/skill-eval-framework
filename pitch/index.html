@@ -82,11 +82,6 @@
   .card .src { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; color: var(--teal); margin-top: 7px; overflow-wrap: anywhere; }
   .card .src.none { color: var(--muted); }
   .card p { font-size: 15.5px; color: var(--muted); margin: 10px 0 0; }
-  .card .explab { font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--amber); margin: 18px 0 10px; }
-  ul.expects { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-  ul.expects li { position: relative; padding-left: 26px; font-size: 15px; color: var(--muted); line-height: 1.5; }
-  ul.expects li::before { content: attr(data-n); position: absolute; left: 0; top: 0; font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--teal); }
-  ul.expects li b { color: var(--fg); font-weight: 500; }
 
   /* mermaid frame */
   .diagram { background: var(--ink-2); border: 1px solid var(--line); border-radius: 12px; padding: 26px 20px; margin-top: 8px; overflow-x: auto; }
@@ -441,13 +436,39 @@ $ curl -s 'api.coinbase.com
     <div class="tag">task drafted by the orchestrator</div>
     <h3>Build a Uniswap swap UI, USDC to WETH, on Ethereum mainnet.</h3>
     <p>Enter an amount, see the expected output, approve the token when needed, run the swap against real Uniswap contracts. The same prompt went to every arm. The only thing that changed was which skill it was told to read first.</p>
-    <div class="explab">and what the judge grades it against</div>
-    <ul class="expects">
-      <li data-n="1">The <b>canonical mainnet addresses</b>, not plausible-looking ones it made up.</li>
-      <li data-n="2">The allowance is <b>checked first</b>, and it only asks to approve when it's short.</li>
-      <li data-n="3">USDC amounts are parsed at <b>6 decimals</b>, not the usual 18.</li>
-      <li data-n="4">A <b>non-zero minimum output</b>, so the trade can't be sandwiched.</li>
-    </ul>
+  </div>
+  <div class="spacer"></div>
+  <p class="body muted reveal">It drafted four expect lines along with it, the conditions the blind judge grades against, concrete enough that it can't be talked into a pass. Every snippet below is real code one of the agents actually wrote.</p>
+  <div class="spacer"></div>
+  <div class="fund">
+    <div class="item reveal">
+      <div><h3><span class="num">01</span> Real contract addresses</h3><p>The canonical mainnet ones, not something plausible-looking it made up. A wrong address here loses real money.</p></div>
+      <pre class="code"><span class="k">const</span> SWAP_ROUTER = <span class="s">"0x68b3…Fc45"</span>; <span class="cm">// Uniswap SwapRouter02</span>
+USDC: { address: <span class="s">"0xA0b8…eB48"</span>, decimals: <span class="k">6</span>  },
+WETH: { address: <span class="s">"0xC02a…6Cc2"</span>, decimals: <span class="k">18</span> },</pre>
+    </div>
+    <div class="item reveal">
+      <div><h3><span class="num">02</span> A correct approve step</h3><p>Check the allowance first, only ask for an approve when it's actually short, then let the swap through.</p></div>
+      <pre class="code"><span class="k">const</span> hasEnoughAllowance = selectedAllowance >= amountIn;
+<span class="cm">// show Approve only when short, otherwise Swap</span>
+{!hasEnoughAllowance ? &lt;Approve/&gt; : &lt;Swap/&gt;}</pre>
+    </div>
+    <div class="item reveal">
+      <div><h3><span class="num">03</span> The USDC decimals quirk</h3><p>USDC is 6 decimals, not the usual 18. Get it wrong and every amount is off by a factor of a trillion.</p></div>
+      <pre class="code"><span class="cm">// parsed with the token's real decimals</span>
+<span class="k">const</span> amount = parseUnits(trimmed, decimals); <span class="cm">// 6 for USDC</span></pre>
+    </div>
+    <div class="item reveal">
+      <div><h3><span class="num">04</span> Slippage protection</h3><p>Set a minimum output, or a bot can sandwich the trade and skim the difference. Never pass zero here.</p></div>
+      <pre class="code"><span class="k">const</span> amountOutMinimum =
+  quoteAmountOut *
+  (BPS_DENOMINATOR - <span class="k">BigInt</span>(slippageBps)) /
+  BPS_DENOMINATOR;</pre>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <div class="callout reveal" style="border-left-color:var(--amber)">
+    <b style="color:var(--amber)">Worth clarifying one thing.</b> Nobody wrote a smart contract here. A swap UI can call Uniswap's contracts directly, so all of this is frontend code, and the agents figured that out on their own. We never said "don't write a contract," they just knew a custom one wasn't needed.
   </div>
 </section>
 
@@ -483,45 +504,9 @@ flowchart TB
   </div>
 </section>
 
-<!-- 8 · THE FUNDAMENTALS -->
-<section>
-  <div class="eyebrow" data-n="07">What the judge checked</div>
-  <h2 class="big reveal">Four things a good swap app gets right.</h2>
-  <p class="body muted reveal">The orchestrator wrote these into the task, concrete enough that the blind judge can't be talked into a pass. Every snippet below is real code one of the agents actually wrote.</p>
-  <div class="spacer"></div>
-  <div class="fund">
-    <div class="item reveal">
-      <div><h3><span class="num">01</span> Real contract addresses</h3><p>The canonical mainnet ones, not something plausible-looking it made up. A wrong address here loses real money.</p></div>
-      <pre class="code"><span class="k">const</span> SWAP_ROUTER = <span class="s">"0x68b3…Fc45"</span>; <span class="cm">// Uniswap SwapRouter02</span>
-USDC: { address: <span class="s">"0xA0b8…eB48"</span>, decimals: <span class="k">6</span>  },
-WETH: { address: <span class="s">"0xC02a…6Cc2"</span>, decimals: <span class="k">18</span> },</pre>
-    </div>
-    <div class="item reveal">
-      <div><h3><span class="num">02</span> A correct approve step</h3><p>Check the allowance first, only ask for an approve when it's actually short, then let the swap through.</p></div>
-      <pre class="code"><span class="k">const</span> hasEnoughAllowance = selectedAllowance >= amountIn;
-<span class="cm">// show Approve only when short, otherwise Swap</span>
-{!hasEnoughAllowance ? &lt;Approve/&gt; : &lt;Swap/&gt;}</pre>
-    </div>
-    <div class="item reveal">
-      <div><h3><span class="num">03</span> The USDC decimals quirk</h3><p>USDC is 6 decimals, not the usual 18. Get it wrong and every amount is off by a factor of a trillion.</p></div>
-      <pre class="code"><span class="cm">// parsed with the token's real decimals</span>
-<span class="k">const</span> amount = parseUnits(trimmed, decimals); <span class="cm">// 6 for USDC</span></pre>
-    </div>
-    <div class="item reveal">
-      <div><h3><span class="num">04</span> Slippage protection</h3><p>Set a minimum output, or a bot can sandwich the trade and skim the difference. Never pass zero here.</p></div>
-      <pre class="code"><span class="k">const</span> amountOutMinimum =
-  quoteAmountOut * (BPS_DENOMINATOR - <span class="k">BigInt</span>(slippageBps)) / BPS_DENOMINATOR;</pre>
-    </div>
-  </div>
-  <div class="spacer"></div>
-  <div class="callout reveal" style="border-left-color:var(--amber)">
-    <b style="color:var(--amber)">Worth clarifying one thing.</b> Nobody wrote a smart contract here. A swap UI can call Uniswap's contracts directly, so all of this is frontend code, and the agents figured that out on their own. We never said "don't write a contract," they just knew a custom one wasn't needed.
-  </div>
-</section>
-
 <!-- 9 · WHAT CAME OUT -->
 <section>
-  <div class="eyebrow" data-n="08">What came out</div>
+  <div class="eyebrow" data-n="07">What came out</div>
   <h2 class="big reveal">All three passed every check.</h2>
   <p class="body muted reveal">On codex with gpt-5.5, the fundamentals came out right whether the agent read a skill or not.</p>
   <div class="spacer"></div>
@@ -536,7 +521,7 @@ WETH: { address: <span class="s">"0xC02a…6Cc2"</span>, decimals: <span class="
 
 <!-- 10 · WHAT IT COST -->
 <section>
-  <div class="eyebrow" data-n="09">What it cost</div>
+  <div class="eyebrow" data-n="08">What it cost</div>
   <h2 class="big reveal">Same score, different amount of work.</h2>
   <p class="body muted reveal">Score bars are identical. Token bars aren't, and that difference is the interesting part.</p>
   <div class="spacer"></div>
@@ -570,7 +555,7 @@ WETH: { address: <span class="s">"0xC02a…6Cc2"</span>, decimals: <span class="
 
 <!-- 11 · ASK THE RUNS -->
 <section>
-  <div class="eyebrow" data-n="10">Asking the runs questions</div>
+  <div class="eyebrow" data-n="09">Asking the runs questions</div>
   <h2 class="big reveal">Once it's on disk, you just keep asking.</h2>
   <p class="body muted reveal">Remember the paper trail from earlier. Because the transcripts and result files are all sitting there, the orchestrator can answer follow-ups without re-running anything.</p>
   <div class="spacer"></div>
@@ -601,7 +586,7 @@ WETH: { address: <span class="s">"0xC02a…6Cc2"</span>, decimals: <span class="
 
 <!-- 12 · THE MISTAKE LOOP -->
 <section>
-  <div class="eyebrow" data-n="11">When a skill misses</div>
+  <div class="eyebrow" data-n="10">When a skill misses</div>
   <h2 class="big reveal">Bad runs turn into notes on the skill.</h2>
   <p class="body muted reveal">A tie is the boring case. The framework earns its keep when a skill fails, because it writes down <em>why</em>. When an executor gets something wrong, that goes into a mistake record: what broke, how often, and which part of the skill should have caught it. That record is the thing you act on next.</p>
   <div class="spacer"></div>
@@ -624,7 +609,7 @@ flowchart LR
 
 <!-- 13 · WHY IT'S BUILT THIS WAY (mold + base) -->
 <section>
-  <div class="eyebrow" data-n="12">Why it's built this way</div>
+  <div class="eyebrow" data-n="11">Why it's built this way</div>
   <h2 class="big reveal">We built a mold, and handed it to the agent.</h2>
   <p class="body muted reveal">There are plenty of eval frameworks already. We read through them, then went the other way. Instead of one more feature-heavy harness, we cut it down to the smallest frame that still runs a fair benchmark, the five lines you saw at the top: who orchestrates, what the task is and what it's graded on, how a fresh executor performs it, how a blind judge grades it, what gets written down. Everything inside them the agent fills in, and when an eval needs a different shape, it just moves a line. It's paint-by-numbers, we drew the outline and the agent paints, free to redraw. In Hindi you'd call the frame a <em>khaka</em>, a mold.</p>
   <div class="spacer"></div>
