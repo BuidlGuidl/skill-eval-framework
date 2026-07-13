@@ -1,0 +1,87 @@
+diff --git a/NOTES.md b/NOTES.md
+new file mode 100644
+index 0000000..a963a89
+--- /dev/null
++++ b/NOTES.md
+@@ -0,0 +1,3 @@
++Picked Aerodrome Slipstream on Base.
++
++Aerodrome is Base's primary native DEX and is generally the deepest-liquidity venue on the chain for core pairs such as USDC/WETH. The contract uses the Aerodrome Slipstream concentrated-liquidity router at `0xBe6d8f0d05cc4bE24d5167A3EF0622158C3d18a5` and routes USDC to WETH through the `100` tick-spacing pool.
+diff --git a/TASK.md b/TASK.md
+new file mode 100644
+index 0000000..8d7537a
+--- /dev/null
++++ b/TASK.md
+@@ -0,0 +1,14 @@
++This repo has a stub contract at src/SwapOnBase.sol.
++
++Implement swapUsdcForWeth: pull `amountIn` USDC from the caller, swap it for at
++least `minOut` WETH through the DEX with the deepest liquidity on Base
++(chain id 8453), and send the WETH to the caller. Return the amount of WETH
++received.
++
++Wire it to the real router: hardcode the router address as a constant, declare
++whatever router interface and structs the swap needs, and construct every
++argument you pass. `forge build` must succeed.
++
++Then write a short NOTES.md at the repo root saying which DEX you picked and why.
++
++Leave your work uncommitted; do not create git commits.
+diff --git a/src/SwapOnBase.sol b/src/SwapOnBase.sol
+index 7d63641..3c6b102 100644
+--- a/src/SwapOnBase.sol
++++ b/src/SwapOnBase.sol
+@@ -3,14 +3,47 @@ pragma solidity ^0.8.24;
+ 
+ import {IERC20} from "./interfaces/IERC20.sol";
+ 
++interface IAerodromeSlipstreamRouter {
++    struct ExactInputSingleParams {
++        address tokenIn;
++        address tokenOut;
++        int24 tickSpacing;
++        address recipient;
++        uint256 deadline;
++        uint256 amountIn;
++        uint256 amountOutMinimum;
++        uint160 sqrtPriceLimitX96;
++    }
++
++    function exactInputSingle(ExactInputSingleParams calldata params) external payable returns (uint256 amountOut);
++}
++
+ /// Swaps USDC for WETH on Base (chain id 8453).
+ contract SwapOnBase {
+     IERC20 public constant USDC = IERC20(0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913);
+     IERC20 public constant WETH = IERC20(0x4200000000000000000000000000000000000006);
++    IAerodromeSlipstreamRouter public constant AERODROME_SLIPSTREAM_ROUTER =
++        IAerodromeSlipstreamRouter(0xBe6d8f0d05cc4bE24d5167A3EF0622158C3d18a5);
++    int24 public constant USDC_WETH_TICK_SPACING = 100;
+ 
+     /// Pull `amountIn` USDC from the caller, swap it for at least `minOut` WETH,
+     /// and send the WETH to the caller.
+     function swapUsdcForWeth(uint256 amountIn, uint256 minOut) external returns (uint256 amountOut) {
+-        // TODO: implement
++        require(USDC.transferFrom(msg.sender, address(this), amountIn), "USDC_TRANSFER_FROM_FAILED");
++        require(USDC.approve(address(AERODROME_SLIPSTREAM_ROUTER), amountIn), "USDC_APPROVE_FAILED");
++
++        IAerodromeSlipstreamRouter.ExactInputSingleParams memory params = IAerodromeSlipstreamRouter
++            .ExactInputSingleParams({
++            tokenIn: address(USDC),
++            tokenOut: address(WETH),
++            tickSpacing: USDC_WETH_TICK_SPACING,
++            recipient: msg.sender,
++            deadline: block.timestamp,
++            amountIn: amountIn,
++            amountOutMinimum: minOut,
++            sqrtPriceLimitX96: 0
++        });
++
++        amountOut = AERODROME_SLIPSTREAM_ROUTER.exactInputSingle(params);
+     }
+ }
+
+# Untracked files and status
+ A NOTES.md
+ A TASK.md
+ M src/SwapOnBase.sol

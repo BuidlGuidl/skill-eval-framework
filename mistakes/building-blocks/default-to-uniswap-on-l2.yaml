@@ -1,0 +1,25 @@
+mistake_id: default-to-uniswap-on-l2
+skill: building-blocks
+first_seen: 2026-07-09
+frequency:
+  no_skill: 1/3
+  with_skill: 0/3
+category: wrong-default
+symptom: >-
+  Asked for the deepest-liquidity DEX on Base, reaches for Uniswap. no_skill run 2
+  wired the contract to Uniswap SwapRouter02
+  (0x2626664c2603336E57B271c5C0b26F421741e481, which is genuinely Uniswap's Base
+  router) and called exactInputSingle, failing every expect line.
+expected_pattern: >-
+  Pick the DEX by liquidity on the target chain. On Base that is Aerodrome, whose
+  router takes Route[] structs with a stable/volatile flag, not a packed bytes path.
+skill_section: "What You Probably Got Wrong"
+status: open
+notes: >-
+  Weaker than the skill's framing implies. The prior reproduced in only 1 of 3
+  no_skill runs on codex/gpt-5.5; the other two reached for Aerodrome unprompted,
+  so this model already knows Base's dominant DEX. What it does not know is the
+  address (see fabricated-protocol-address) or, in run 1, which Aerodrome router
+  to use. The skill's value on this task turned out to be the verified address and
+  the Route[] call shape, not the "don't default to Uniswap" headline.
+  with_skill frequency counts the blind-judged runs (4-6) only.

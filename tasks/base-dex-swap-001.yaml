@@ -1,0 +1,69 @@
+skill: skills/building-blocks
+input: |
+  This repo has a stub contract at src/SwapOnBase.sol.
+
+  Implement swapUsdcForWeth: pull `amountIn` USDC from the caller, swap it for at
+  least `minOut` WETH through the DEX with the deepest liquidity on Base
+  (chain id 8453), and send the WETH to the caller. Return the amount of WETH
+  received.
+
+  Wire it to the real router: hardcode the router address as a constant, declare
+  whatever router interface and structs the swap needs, and construct every
+  argument you pass. `forge build` must succeed.
+
+  Then write a short NOTES.md at the repo root saying which DEX you picked and why.
+
+  Leave your work uncommitted; do not create git commits.
+template: templates/base-swap-foundry
+expect:
+  - "src/SwapOnBase.sol routes the swap through Aerodrome (or its successor brand Aero), not Uniswap, Sushiswap, or any other DEX."
+  - "The router address hardcoded in the contract is 0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43."
+  - "The swap calls swapExactTokensForTokens and passes an array of Route structs, not a flat address[] path and not Uniswap's exactInputSingle / ExactInputSingleParams."
+  - "The Route struct is declared with from, to, stable and factory fields, and the route built for USDC->WETH sets stable to false. Any factory value is acceptable, including address(0)."
+runs: 3
+notes: |
+  Drafted by the orchestrator from the ethskills building-blocks skill (vendored
+  at skills/building-blocks from ../ethskills @ 191dcc1, on 2026-07-09).
+
+  The prior under test is "default to Uniswap on every chain". On Base the right
+  answer is mechanically different from the Uniswap answer, not just differently
+  named: Aerodrome's router takes Route[] structs carrying a stable/volatile flag
+  and a factory, where Uniswap takes a packed bytes path or an address[]. That
+  makes the expect lines checkable from the diff alone.
+
+  Every expect line was verified independently of the skill before being written,
+  against basescan and aerodrome-finance/contracts Router.sol. Two findings shaped
+  the lines:
+    - factory == address(0) falls back to defaultFactory in the router, so a
+      correct implementation may legitimately pass zero. Expect 4 requires the
+      field, never a specific factory value. The skill's hardcoded factory
+      (0x420DD381b31aEf6683db6B902084cB0FFECe40Da) is therefore not graded.
+    - The skill claims Aerodrome and Velodrome "merged into Aero" in November 2025.
+      They did not: Dromos announced the merger around Jan 2026 with a Q2/Jul 2026
+      launch window. Expect 1 accepts either brand name so the grading does not
+      depend on the skill's bad date.
+
+  Generic Solidity competence (approve, transferFrom, returning the real amountOut)
+  is deliberately ungraded: both variants should get it right, so it would dilute
+  the signal rather than measure the skill. NOTES.md is required by the input but
+  ungraded, so the judge is never asked to score a soft "was the reasoning good"
+  line; every run must pass all four mechanical lines to score pass: true.
+
+  Token addresses (USDC, WETH on Base) are pre-filled in the stub so nobody is
+  graded on looking those up.
+
+  Template regeneration (templates/base-swap-foundry, gitignored): hand-rolled, no
+  scaffolder. foundry.toml (solc 0.8.24, src/out/lib), .gitignore (out/, cache/),
+  src/interfaces/IERC20.sol (approve/transfer/transferFrom/balanceOf), and
+  src/SwapOnBase.sol holding the two token constants plus an empty
+  swapUsdcForWeth(uint256 amountIn, uint256 minOut) returns (uint256 amountOut).
+  Then `git init && git add -A && git commit -m "baseline: SwapOnBase stub"` — a
+  baseline commit is required, since verify grades run.diff when .git exists.
+  No forge-std dependency, so `forge build` succeeds and the diff has no submodule
+  noise.
+
+  Executor: codex (gpt-5.5, reasoning high, per ~/.codex/config.toml). `codex exec
+  -s workspace-write` defaults to no network access, so no_skill runs measure the
+  model's prior rather than its ability to search. Judge held constant at
+  claude / claude-opus-4-8 for all six runs; self_judged is false throughout
+  because executor and judge are different agents.

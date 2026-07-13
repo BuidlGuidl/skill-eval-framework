@@ -1,0 +1,93 @@
+diff --git a/NOTES.md b/NOTES.md
+new file mode 100644
+index 0000000..5b7e71c
+--- /dev/null
++++ b/NOTES.md
+@@ -0,0 +1,8 @@
++# Swap DEX Choice
++
++I picked Aerodrome on Base and wired `swapUsdcForWeth` to its router at
++`0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43`.
++
++Aerodrome is the deepest native DEX on Base for common pairs, including
++USDC/WETH, so the contract routes through its volatile USDC -> WETH pool using
++the Aerodrome factory at `0x420DD381b31aEf6683db6B902084cB0FFECe40Da`.
+diff --git a/TASK.md b/TASK.md
+new file mode 100644
+index 0000000..8d7537a
+--- /dev/null
++++ b/TASK.md
+@@ -0,0 +1,14 @@
++This repo has a stub contract at src/SwapOnBase.sol.
++
++Implement swapUsdcForWeth: pull `amountIn` USDC from the caller, swap it for at
++least `minOut` WETH through the DEX with the deepest liquidity on Base
++(chain id 8453), and send the WETH to the caller. Return the amount of WETH
++received.
++
++Wire it to the real router: hardcode the router address as a constant, declare
++whatever router interface and structs the swap needs, and construct every
++argument you pass. `forge build` must succeed.
++
++Then write a short NOTES.md at the repo root saying which DEX you picked and why.
++
++Leave your work uncommitted; do not create git commits.
+diff --git a/src/SwapOnBase.sol b/src/SwapOnBase.sol
+index 7d63641..a2906b6 100644
+--- a/src/SwapOnBase.sol
++++ b/src/SwapOnBase.sol
+@@ -8,9 +8,48 @@ contract SwapOnBase {
+     IERC20 public constant USDC = IERC20(0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913);
+     IERC20 public constant WETH = IERC20(0x4200000000000000000000000000000000000006);
+ 
++    IAerodromeRouter public constant ROUTER = IAerodromeRouter(0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43);
++    address public constant AERODROME_FACTORY = 0x420DD381b31aEf6683db6B902084cB0FFECe40Da;
++
+     /// Pull `amountIn` USDC from the caller, swap it for at least `minOut` WETH,
+     /// and send the WETH to the caller.
+     function swapUsdcForWeth(uint256 amountIn, uint256 minOut) external returns (uint256 amountOut) {
+-        // TODO: implement
++        require(USDC.transferFrom(msg.sender, address(this), amountIn), "USDC_TRANSFER_FROM_FAILED");
++        require(USDC.approve(address(ROUTER), amountIn), "USDC_APPROVE_FAILED");
++
++        IAerodromeRouter.Route[] memory routes = new IAerodromeRouter.Route[](1);
++        routes[0] = IAerodromeRouter.Route({
++            from: address(USDC),
++            to: address(WETH),
++            stable: false,
++            factory: AERODROME_FACTORY
++        });
++
++        uint256[] memory amounts = ROUTER.swapExactTokensForTokens({
++            amountIn: amountIn,
++            amountOutMin: minOut,
++            routes: routes,
++            to: msg.sender,
++            deadline: block.timestamp
++        });
++
++        amountOut = amounts[amounts.length - 1];
+     }
+ }
++
++interface IAerodromeRouter {
++    struct Route {
++        address from;
++        address to;
++        bool stable;
++        address factory;
++    }
++
++    function swapExactTokensForTokens(
++        uint256 amountIn,
++        uint256 amountOutMin,
++        Route[] calldata routes,
++        address to,
++        uint256 deadline
++    ) external returns (uint256[] memory amounts);
++}
+
+# Untracked files and status
+ A NOTES.md
+ A TASK.md
+ M src/SwapOnBase.sol

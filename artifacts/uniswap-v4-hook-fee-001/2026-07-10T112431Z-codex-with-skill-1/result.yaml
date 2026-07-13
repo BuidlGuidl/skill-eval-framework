@@ -1,0 +1,16 @@
+task: uniswap-v4-hook-fee-001
+run: 2026-07-10T112431Z-codex-with-skill-1
+executor: codex
+variant: with_skill
+skill_version: 722fe83
+created: '2026-07-10T11:24:31.307Z'
+judge:
+  agent: claude
+  model: claude-opus-4-8
+  self_judged: false
+expects:
+  expect_1: pass
+  expect_2: pass
+  expect_3: pass
+  expect_4: pass
+pass: true
