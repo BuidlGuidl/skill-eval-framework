@@ -17,7 +17,7 @@ The loop repeats until the skill is crisp, or you learn it isn't valuable.
 Two harnesses are supported right now, [claude code](https://github.com/anthropics/claude-code) and [codex](https://github.com/openai/codex), so make sure the ones you'll use are installed. Either can fill any of the three roles in a benchmark: the orchestrator you open here, the executors that perform the runs, and the judge that grades them. Mixing is fine (claude orchestrating, codex executing), and so is running everything on one. Opening it up to opencode and other harnesses is planned.
 
 ```bash
-git clone https://github.com/technophile-04/skill-eval-framework.git
+git clone https://github.com/BuidlGuidl/skill-eval-framework.git
 cd skill-eval-framework
 yarn install
 claude   # or codex
