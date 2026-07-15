@@ -1,0 +1,70 @@
+skill: skills/building-blocks
+input: |
+  This repo has a stub contract at src/FlashArb.sol.
+
+  Implement a single-asset Aave V3 flash loan on Ethereum mainnet. `executeArb(asset, amount)`
+  borrows `amount` of `asset` from the Aave V3 Pool; the Pool then calls back into this
+  contract, which must repay the borrowed amount plus its premium before returning.
+
+  Hardcode the Aave V3 Pool address as a constant. No external dependencies are installed, so
+  declare any interfaces or base contracts you need directly in this repo. `forge build` must
+  succeed.
+
+  Then write NOTES.md at the repo root stating:
+    - the Aave V3 flash loan premium, in basis points
+    - the exact total you must repay if you borrow 1,000,000 USDC (6 decimals), showing the
+      arithmetic
+
+  Leave your work uncommitted; do not create git commits.
+template: templates/aave-flashloan-foundry
+expect:
+  - "NOTES.md states the Aave V3 flash loan premium as 5 basis points (0.05%). The Aave V2 figure of 9 bps / 0.09% is wrong."
+  - "NOTES.md gives the total repayment for a 1,000,000 USDC flash loan as 1,000,500 USDC (equivalently 1000500000000 in 6-decimal base units), with the arithmetic shown."
+  - "The Aave V3 Pool address hardcoded in src/FlashArb.sol is 0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2."
+  - "The flash loan callback (executeOperation) approves the Pool to pull at least amount + premium of the asset, and returns true. Either flashLoanSimple or flashLoan is acceptable; approve, safeApprove and forceApprove are all acceptable."
+runs: 3
+notes: |
+  Second benchmark of the ethskills building-blocks skill (vendored at skills/building-blocks
+  from ../ethskills @ 191dcc1). Drafted 2026-07-09, run 2026-07-10.
+
+  Two things under test at once.
+
+  (1) The stale prior. Aave V2's flash loan fee was 9 bps; Aave V3's is 5 bps. A model quoting
+  the V2 figure is exactly the failure mode this skill library exists to correct, and the
+  arithmetic makes it unbluffable: 1,000,000 USDC repays 1,000,500 at 5 bps and 1,000,900 at
+  9 bps.
+
+  (2) The table-vs-prose hypothesis from base-dex-swap-001. There, the Aerodrome router lived
+  only in a trailing `//` comment inside a snippet, and with_skill run 4 fabricated it anyway.
+  Here the Aave V3 Pool sits in the skill's "Key Protocol Addresses" markdown table. If the
+  hypothesis holds — addresses in a table get copied, addresses in prose get regenerated —
+  expect_3 should pass 3/3 with_skill while no_skill fabricates. This task is the control.
+
+  Facts verified on-chain before the expect lines were written, never from the skill:
+  FLASHLOAN_PREMIUM_TOTAL() on 0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2 (mainnet) returns 5,
+  and Blockscout tags that address "Aave: Pool V3" (verified eip1967 proxy, impl PoolInstance).
+
+  expect_4 is deliberately implementation-agnostic. base-dex-swap-001 learned this the hard
+  way: its expects encoded one valid router and scored a defensible alternative as failure. A
+  flash loan is correct via flashLoanSimple or the batch flashLoan, and the approve may be
+  approve/safeApprove/forceApprove. The line grades the invariant (repay amount + premium,
+  return true), not the spelling.
+
+  The premium is a callback parameter, so a correct contract never hardcodes 5 bps. That is why
+  the fee is graded out of NOTES.md rather than the diff — otherwise the prior is untestable.
+
+  No external deps are installed on purpose: agents must declare a local IPool interface, which
+  keeps `forge build` green and keeps the benchmark off the skill's flash-loan import path
+  (SKILL.md:132 points at @aave/v3-core/contracts/flashloan-v3/base/, which is not the real
+  package path — see reports/building-blocks-suggestions.md).
+
+  Template regeneration (templates/aave-flashloan-foundry, gitignored): hand-rolled.
+  foundry.toml (solc 0.8.24), .gitignore (out/, cache/), src/interfaces/IERC20.sol, and
+  src/FlashArb.sol holding an empty executeArb(address asset, uint256 amount). Then
+  `git init && git add -A && git commit -m "baseline: FlashArb stub"` — verify grades run.diff
+  when .git exists.
+
+  Executor: codex (gpt-5.5, reasoning high). `codex exec -s workspace-write` defaults to no
+  network, so no_skill measures the prior, not search. Judge held at claude / claude-opus-4-8
+  for all six runs; self_judged false throughout. First benchmark to run under the patched
+  verify (722fe83), so the judge never sees the installed skill.

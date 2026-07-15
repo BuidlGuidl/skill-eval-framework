@@ -1,0 +1,16 @@
+task: base-dex-swap-001
+run: 2026-07-09T145438Z-codex-with-skill-6
+executor: codex
+variant: with_skill
+skill_version: fdc2869
+created: '2026-07-09T14:54:38.599Z'
+judge:
+  agent: claude
+  model: claude-opus-4-8
+  self_judged: false
+expects:
+  expect_1: pass
+  expect_2: pass
+  expect_3: pass
+  expect_4: pass
+pass: true

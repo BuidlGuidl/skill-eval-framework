@@ -1,0 +1,133 @@
+diff --git a/NOTES.md b/NOTES.md
+new file mode 100644
+index 0000000..0ef85ea
+--- /dev/null
++++ b/NOTES.md
+@@ -0,0 +1,18 @@
++# Dynamic fee hook notes
++
++The canonical Ethereum mainnet Uniswap V4 `PoolManager` address used by the hook is
++`0x000000000004444c5dc75cB358380D2e3dE08A90`.
++
++The third value returned by `beforeSwap` is not just the numeric LP fee. The hook returns
++`fee | 0x400000`, where `0x400000` is Uniswap V4's `OVERRIDE_FEE_FLAG` (bit 22, the
++second-highest bit of a `uint24`). Thus the normal return is `0x4001f4` (`0x400000 | 500`)
++and the high-volatility return is `0x400bb8` (`0x400000 | 3000`).
++
++For a dynamic-fee pool, identified by `PoolKey.fee == 0x800000`, the `PoolManager` reads
++the hook's third return value. Its swap logic tests the `0x400000` bit; because that bit is
++set, it clears the bit with the `0xbfffff` mask, validates that the remaining value is at
++most 1,000,000, and uses the remaining `500` or `3000` as that swap's LP fee instead of
++the LP fee stored in the pool's `Slot0`. The stored fee is not changed. If the pool is not
++configured as a dynamic-fee pool, the hook return is not used as an LP-fee override.
++
++LP fees use a denominator of 1,000,000, so `500` means 0.05% and `3000` means 0.30%.
+diff --git a/TASK.md b/TASK.md
+new file mode 100644
+index 0000000..da7e182
+--- /dev/null
++++ b/TASK.md
+@@ -0,0 +1,18 @@
++This repo has a stub contract at src/DynamicFeeHook.sol.
++
++Implement a Uniswap V4 dynamic-fee hook for Ethereum mainnet:
++
++  - Hardcode the canonical mainnet Uniswap V4 PoolManager address as a constant POOL_MANAGER.
++  - getHookPermissions() returns a permissions struct with only beforeSwap enabled.
++  - beforeSwap(...) returns its own selector, a zero BeforeSwapDelta, and an LP fee that
++    overrides the pool's stored fee for that swap: 500 normally, 3000 when
++    _isHighVolatility() returns true. Leave _isHighVolatility() as the stub it is.
++
++No external dependencies are installed, so declare any interfaces, structs and types you need
++directly in this repo. `forge build` must succeed.
++
++Then write NOTES.md at the repo root stating the PoolManager address you used, and explaining
++exactly how the uint24 you return from beforeSwap tells the PoolManager to use that fee
++instead of the pool's stored LP fee.
++
++Leave your work uncommitted; do not create git commits.
+diff --git a/src/DynamicFeeHook.sol b/src/DynamicFeeHook.sol
+index d0f5a48..07f1136 100644
+--- a/src/DynamicFeeHook.sol
++++ b/src/DynamicFeeHook.sol
+@@ -1,12 +1,72 @@
+ // SPDX-License-Identifier: MIT
+ pragma solidity ^0.8.24;
+ 
++type Currency is address;
++type BeforeSwapDelta is int256;
++
++interface IHooks {
++    function beforeSwap(
++        address sender,
++        PoolKey calldata key,
++        SwapParams calldata params,
++        bytes calldata hookData
++    ) external returns (bytes4, BeforeSwapDelta, uint24);
++}
++
++struct PoolKey {
++    Currency currency0;
++    Currency currency1;
++    uint24 fee;
++    int24 tickSpacing;
++    IHooks hooks;
++}
++
++struct SwapParams {
++    bool zeroForOne;
++    int256 amountSpecified;
++    uint160 sqrtPriceLimitX96;
++}
++
++library Hooks {
++    struct Permissions {
++        bool beforeInitialize;
++        bool afterInitialize;
++        bool beforeAddLiquidity;
++        bool afterAddLiquidity;
++        bool beforeRemoveLiquidity;
++        bool afterRemoveLiquidity;
++        bool beforeSwap;
++        bool afterSwap;
++        bool beforeDonate;
++        bool afterDonate;
++        bool beforeSwapReturnDelta;
++        bool afterSwapReturnDelta;
++        bool afterAddLiquidityReturnDelta;
++        bool afterRemoveLiquidityReturnDelta;
++    }
++}
++
+ /// A Uniswap V4 hook that overrides the LP fee on each swap.
+-contract DynamicFeeHook {
++contract DynamicFeeHook is IHooks {
++    address public constant POOL_MANAGER = 0x000000000004444c5dc75cB358380D2e3dE08A90;
++
++    uint24 private constant OVERRIDE_FEE_FLAG = 0x400000;
++
++    function getHookPermissions() public pure returns (Hooks.Permissions memory permissions) {
++        permissions.beforeSwap = true;
++    }
++
++    function beforeSwap(address, PoolKey calldata, SwapParams calldata, bytes calldata)
++        external
++        override
++        returns (bytes4, BeforeSwapDelta, uint24)
++    {
++        uint24 fee = _isHighVolatility() ? 3000 : 500;
++        return (this.beforeSwap.selector, BeforeSwapDelta.wrap(0), fee | OVERRIDE_FEE_FLAG);
++    }
++
+     /// Stand-in for a volatility oracle. Leave as-is.
+     function _isHighVolatility() internal pure returns (bool) {
+         return false;
+     }
+-
+-    // TODO: implement
+ }
+
+# Untracked files and status
+ A NOTES.md
+ A TASK.md
+ M src/DynamicFeeHook.sol
