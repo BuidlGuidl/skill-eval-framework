@@ -1,0 +1,37 @@
+mistake_id: fabricated-protocol-address
+skill: building-blocks
+first_seen: 2026-07-09
+frequency:
+  no_skill: 2/3
+  with_skill: 1/3
+category: fabricated-address
+symptom: >-
+  Writes a contract address that is not the real one, with the leading hex chars
+  correct and the tail invented. The prefix match makes it survive eyeballing.
+  no_skill run 1 wrote the Slipstream router as
+  0xBe6d8f0d05cc4bE24d5167A3EF0622158C3d18a5 (34 of 40 hex chars match truth);
+  no_skill run 3 wrote the Aerodrome router as
+  0xCF77a3Ba9A5Ca399B7c97c74d54e5bf64F43Ad34 (32 match) and its factory as
+  0x420Dd381b31AeF6683DB6b902084cb0fFee38Dc2 (36 match). with_skill run 4 did it
+  again, wrote 0xcF77A3bA9a5Ca399b7C97c74d54e5b4DA9F7Cf0D while the skill was
+  installed and open, and was the only blind-judged with_skill run to fail. That
+  run fabricated the router twice, differently: its NOTES.md cites
+  0xcF77a3Ba9A5CA399B7c97c74d54e5b4d9521c0d, which is 39 hex chars and so not a
+  valid address at all, while its contract constant is a different 40-char wrong
+  value. Both share the real address's first 30 chars.
+expected_pattern: >-
+  Copy the address from a verified table, or fetch it, and never retype it from
+  memory. An address the model cannot source should be left as a TODO, not
+  guessed.
+skill_section: "Key Protocol Addresses (Verified Mar 2026)"
+status: open
+notes: >-
+  The skill does carry the correct Base router (0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43)
+  and factory, but only as trailing `//` comments inside the Solidity snippet at
+  SKILL.md:179 and :184. The "Key Protocol Addresses" table is mainnet-only and has
+  no Aerodrome row at all. Runs 5 and 6 copied both addresses exactly; run 4
+  paraphrased them from memory. The hypothesis this run supports: addresses in a
+  table get copied, addresses in prose or code comments get regenerated. Moving the
+  Base addresses into the table is the cheapest test of that.
+  with_skill frequency counts the blind-judged runs (4-6) only. Runs 1-3 were graded
+  by a judge that could see the skill and are excluded from every number here.

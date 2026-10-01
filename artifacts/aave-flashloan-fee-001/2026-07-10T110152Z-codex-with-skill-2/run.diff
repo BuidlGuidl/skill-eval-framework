@@ -1,0 +1,94 @@
+diff --git a/NOTES.md b/NOTES.md
+new file mode 100644
+index 0000000..ae610c4
+--- /dev/null
++++ b/NOTES.md
+@@ -0,0 +1,13 @@
++# Aave V3 Flash Loan Notes
++
++The Aave V3 flash-loan premium on Ethereum mainnet is **5 basis points** (0.05%).
++
++For a flash loan of 1,000,000 USDC (6 decimals):
++
++```text
++Borrowed amount = 1,000,000 USDC = 1,000,000,000,000 base units
++Premium        = 1,000,000,000,000 * 5 / 10,000
++               = 500,000,000 base units = 500 USDC
++Total repayment = 1,000,000,000,000 + 500,000,000
++                = 1,000,500,000,000 base units = 1,000,500 USDC
++```
+diff --git a/TASK.md b/TASK.md
+new file mode 100644
+index 0000000..8c2bfb1
+--- /dev/null
++++ b/TASK.md
+@@ -0,0 +1,16 @@
++This repo has a stub contract at src/FlashArb.sol.
++
++Implement a single-asset Aave V3 flash loan on Ethereum mainnet. `executeArb(asset, amount)`
++borrows `amount` of `asset` from the Aave V3 Pool; the Pool then calls back into this
++contract, which must repay the borrowed amount plus its premium before returning.
++
++Hardcode the Aave V3 Pool address as a constant. No external dependencies are installed, so
++declare any interfaces or base contracts you need directly in this repo. `forge build` must
++succeed.
++
++Then write NOTES.md at the repo root stating:
++  - the Aave V3 flash loan premium, in basis points
++  - the exact total you must repay if you borrow 1,000,000 USDC (6 decimals), showing the
++    arithmetic
++
++Leave your work uncommitted; do not create git commits.
+diff --git a/src/FlashArb.sol b/src/FlashArb.sol
+index 7350fe6..e6c79c8 100644
+--- a/src/FlashArb.sol
++++ b/src/FlashArb.sol
+@@ -3,11 +3,42 @@ pragma solidity ^0.8.24;
+ 
+ import {IERC20} from "./interfaces/IERC20.sol";
+ 
++interface IAaveV3Pool {
++    function flashLoanSimple(
++        address receiverAddress,
++        address asset,
++        uint256 amount,
++        bytes calldata params,
++        uint16 referralCode
++    ) external;
++}
++
+ /// Single-asset flash loan against Aave V3 on Ethereum mainnet.
+ contract FlashArb {
++    IAaveV3Pool public constant AAVE_V3_POOL = IAaveV3Pool(0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2);
++
++    error UnauthorizedCallback();
++    error InvalidInitiator();
++    error ApprovalFailed();
++
+     /// Borrow `amount` of `asset` from Aave V3. The Pool calls back into this contract,
+     /// which must repay the borrowed amount plus the premium before the call returns.
+     function executeArb(address asset, uint256 amount) external {
+-        // TODO: implement
++        AAVE_V3_POOL.flashLoanSimple(address(this), asset, amount, "", 0);
++    }
++
++    /// Aave V3 callback. The Pool pulls `amount + premium` after this returns successfully.
++    function executeOperation(address asset, uint256 amount, uint256 premium, address initiator, bytes calldata)
++        external
++        returns (bool)
++    {
++        if (msg.sender != address(AAVE_V3_POOL)) revert UnauthorizedCallback();
++        if (initiator != address(this)) revert InvalidInitiator();
++
++        if (!IERC20(asset).approve(address(AAVE_V3_POOL), amount + premium)) {
++            revert ApprovalFailed();
++        }
++
++        return true;
+     }
+ }
+
+# Untracked files and status
+ A NOTES.md
+ A TASK.md
+ M src/FlashArb.sol

@@ -1,0 +1,76 @@
+skill: skills/building-blocks
+input: |
+  This repo has a stub contract at src/DynamicFeeHook.sol.
+
+  Implement a Uniswap V4 dynamic-fee hook for Ethereum mainnet:
+
+    - Hardcode the canonical mainnet Uniswap V4 PoolManager address as a constant POOL_MANAGER.
+    - getHookPermissions() returns a permissions struct with only beforeSwap enabled.
+    - beforeSwap(...) returns its own selector, a zero BeforeSwapDelta, and an LP fee that
+      overrides the pool's stored fee for that swap: 500 normally, 3000 when
+      _isHighVolatility() returns true. Leave _isHighVolatility() as the stub it is.
+
+  No external dependencies are installed, so declare any interfaces, structs and types you need
+  directly in this repo. `forge build` must succeed.
+
+  Then write NOTES.md at the repo root stating the PoolManager address you used, and explaining
+  exactly how the uint24 you return from beforeSwap tells the PoolManager to use that fee
+  instead of the pool's stored LP fee.
+
+  Leave your work uncommitted; do not create git commits.
+template: templates/v4-hook-foundry
+expect:
+  - "src/DynamicFeeHook.sol hardcodes the mainnet Uniswap V4 PoolManager address as 0x000000000004444c5dc75cB358380D2e3dE08A90."
+  - "The uint24 fee returned from beforeSwap has the override flag 0x400000 set, either as a hex literal or via a named constant such as OVERRIDE_FEE_FLAG. A fee OR'd with 0x800000 is wrong: 0x800000 is DYNAMIC_FEE_FLAG, which marks a pool as dynamic-fee at initialization, and does not signal a per-swap override."
+  - "getHookPermissions() enables beforeSwap and leaves every other hook permission false."
+  - "NOTES.md explains that the returned fee replaces the pool's stored LP fee only because the override bit (0x400000) is set, and does not claim that 0x800000 is what performs the per-swap override."
+runs: 3
+notes: |
+  Third benchmark of ethskills building-blocks (vendored at skills/building-blocks from
+  ../ethskills @ 191dcc1). Drafted and run 2026-07-10.
+
+  Designed as the decisive test of the table-vs-prose conjecture that base-dex-swap-001 raised
+  and aave-flashloan-fee-001 failed to settle. The conjecture: addresses the skill puts in a
+  markdown table get copied, addresses it leaves in prose or code comments get regenerated from
+  memory (and therefore fabricated).
+
+  aave-flashloan-fee-001 could not test it, because the model reproduced Aave's Pool address
+  perfectly from memory — no fabrication baseline. Address fabrication tracks protocol
+  obscurity. So this task picks an address the model has no hope of recalling: the V4
+  PoolManager is a mined vanity address, 0x000000000004444c5dc75cB358380D2e3dE08A90, with a run
+  of zeros and no memorable structure. It sits in the skill's "Key Protocol Addresses" table.
+
+  expect_1 is the table probe. expect_2 and expect_4 are the prose probe, and they are pointed
+  at a place where the skill is WRONG.
+
+  The skill's hook snippet (SKILL.md:75) returns `fee | 0x800000`. Verified against
+  Uniswap/v4-core src/libraries/LPFeeLibrary.sol: DYNAMIC_FEE_FLAG is 0x800000 and
+  OVERRIDE_FEE_FLAG is 0x400000, and isOverride() tests `self & OVERRIDE_FEE_FLAG != 0`. A hook
+  returning `fee | 0x800000` therefore fails isOverride(), the PoolManager ignores the returned
+  fee, and the pool silently keeps charging its stored fee. It compiles. It does nothing.
+
+  So this task predicts opposite deltas inside one benchmark: the skill should HELP expect_1
+  (address, from the table) and HURT expect_2/expect_4 (override flag, from the snippet). A
+  with_skill run that copies the snippet is a negative delta, the first this eval has looked
+  for directly.
+
+  Facts verified before the expect lines were written, never from the skill:
+    - 0x000000000004444c5dc75cB358380D2e3dE08A90 is a verified contract named PoolManager,
+      tagged "Uniswap V4: Pool Manager" on Blockscout, first tx 2024-11-27.
+    - LPFeeLibrary flags, from v4-core main.
+
+  expect_2 accepts a named constant or a literal; it grades the value, not the spelling — the
+  lesson base-dex-swap-001 learned when its expects encoded one valid implementation.
+
+  No external deps on purpose: the agent declares its own IPoolManager, Permissions struct and
+  BeforeSwapDelta type, which keeps `forge build` green offline and keeps the benchmark off the
+  skill's import paths. solc pinned to 0.8.24 because codex runs offline and that compiler is
+  already cached; an uncached solc version would fail the build for reasons unrelated to the
+  skill.
+
+  Template regeneration (templates/v4-hook-foundry, gitignored): hand-rolled. foundry.toml
+  (solc 0.8.24), .gitignore (out/, cache/), and src/DynamicFeeHook.sol holding only a
+  _isHighVolatility() stub returning false. Then `git init && git add -A && git commit`.
+
+  Executor: codex (gpt-5.5, reasoning high), offline. Judge claude / claude-opus-4-8, constant
+  across all six runs, self_judged false. Runs under patched verify (722fe83).

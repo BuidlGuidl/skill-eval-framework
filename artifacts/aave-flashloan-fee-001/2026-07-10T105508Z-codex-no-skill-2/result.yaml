@@ -1,0 +1,16 @@
+task: aave-flashloan-fee-001
+run: 2026-07-10T105508Z-codex-no-skill-2
+executor: codex
+variant: no_skill
+skill_version: null
+created: '2026-07-10T10:55:08.262Z'
+judge:
+  agent: claude
+  model: claude-opus-4-8
+  self_judged: false
+expects:
+  expect_1: pass
+  expect_2: pass
+  expect_3: pass
+  expect_4: pass
+pass: true

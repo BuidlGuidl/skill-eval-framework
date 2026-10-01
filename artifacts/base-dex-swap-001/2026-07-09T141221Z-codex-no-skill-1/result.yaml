@@ -1,0 +1,16 @@
+task: base-dex-swap-001
+run: 2026-07-09T141221Z-codex-no-skill-1
+executor: codex
+variant: no_skill
+skill_version: null
+created: '2026-07-09T14:12:21.632Z'
+judge:
+  agent: claude
+  model: claude-opus-4-8
+  self_judged: false
+expects:
+  expect_1: pass
+  expect_2: fail
+  expect_3: fail
+  expect_4: fail
+pass: false
